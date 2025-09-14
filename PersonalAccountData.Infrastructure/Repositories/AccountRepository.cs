@@ -1,12 +1,13 @@
-﻿using PersonalAccountData.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PersonalAccountData.Core.Entities;
 using PersonalAccountData.Core.Interfaces;
+using PersonalAccountData.Infrastructure.Data;
+using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
-using System;
+using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace PersonalAccountData.Infrastructure.Repositories
 {
@@ -111,21 +112,35 @@ namespace PersonalAccountData.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(residentName))
             {
-                query = query.Where(a => a.Residents.Any(r =>
-                    r.LastName.Contains(residentName) ||
-                    r.MiddleName.Contains(residentName) ||
-                    r.FirstName.Contains(residentName)));
+                var searchParts = residentName
+                    .ToLower()
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var part in searchParts)
+                {
+                    query = query.Where(a => a.Residents.Any(r =>
+                    EF.Functions.Like(
+                        (r.LastName + " " + r.FirstName + " " + r.MiddleName).ToLower(),
+                        "%" + part + "%")));
+                }
             }
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(a =>
-                a.AccountNumber.Contains(searchTerm) ||
-                a.Address.Contains(searchTerm) ||
-                a.Residents.Any(r =>
-                    r.LastName.Contains(searchTerm) ||
-                    r.MiddleName.Contains(searchTerm) ||
-                    r.FirstName.Contains(searchTerm)));
+                var searchParts = searchTerm
+                    .ToLower()
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in searchParts)
+                {
+                    var searchTermLower = searchTerm.ToLower();
+                    query = query.Where(a =>
+                    a.AccountNumber.ToLower().Contains(searchTerm) ||
+                    a.Address.ToLower().Contains(searchTerm) ||
+                    a.Residents.Any(r =>
+                        EF.Functions.Like(
+                            (r.LastName + " " + r.FirstName + " " + r.MiddleName).ToLower(),
+                            "%" + part + "%")));
+                }
             }
 
             if (hasResidents.HasValue)
