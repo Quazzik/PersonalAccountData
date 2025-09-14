@@ -64,5 +64,38 @@ namespace PersonalAccountData.API.Controllers
 
             return Ok(_mapper.Map<List<AccountDTO>>(accounts));
         }
+
+        [HttpPut]
+        public async Task<ActionResult> Update (int id, AccountDTO accountDTO)
+        {
+            if (id != accountDTO.Id)
+            {
+                return BadRequest("The ID of the edited user and the edited data do not match");
+            }
+
+            var existingAccount = await _accountService.GetAccountByIdAsync(id);
+            if (existingAccount == null)
+            {
+                return NotFound();
+            }
+
+            _mapper.Map(accountDTO, existingAccount);
+            await _accountService.UpdateAccountAsync(existingAccount);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete (int id)
+        {
+            var account = await _accountService.GetAccountByIdAsync (id);
+            if (account == null)
+            {
+                return NotFound();
+            }
+
+            await _accountService.DeleteAccountAsync(id);
+            return NoContent();
+        }
     }
 }
