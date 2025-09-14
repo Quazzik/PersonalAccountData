@@ -87,5 +87,84 @@ namespace PersonalAccountData.Infrastructure.Repositories
 
             return await query.AnyAsync();
         }
+
+        public async Task<List<Account>> GetFilteredAccountsAsync(
+            string searchTerm,
+            bool? hasResidents,
+            DateTime? activeDate,
+            string accountNumber = null,
+            string address = null,
+            string residentName = null)
+        {
+            var query = _context.Accounts
+                .Include(a => a.Residents)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(accountNumber) && accountNumber.Length == 10 &&
+                accountNumber.All(char.IsDigit))
+            {
+                query = query.Where(a => a.AccountNumber.Contains(accountNumber));
+            }
+
+            if (!string.IsNullOrEmpty(address))
+                query = query.Where(a => a.Address.Contains(address));
+
+            if (!string.IsNullOrEmpty(residentName))
+            {
+                query = query.Where(a => a.Residents.Any(r =>
+                    r.LastName.Contains(residentName) ||
+                    r.MiddleName.Contains(residentName) ||
+                    r.FirstName.Contains(residentName)));
+            }
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(a =>
+                a.AccountNumber.Contains(searchTerm) ||
+                a.Address.Contains(searchTerm) ||
+                a.Residents.Any(r =>
+                    r.LastName.Contains(searchTerm) ||
+                    r.MiddleName.Contains(searchTerm) ||
+                    r.FirstName.Contains(searchTerm)));
+            }
+
+            if (hasResidents.HasValue)
+            {
+                query = hasResidents.Value ?
+                    query.Where(a => a.Residents.Any()) :
+                    query.Where(a => !a.Residents.Any());
+            }
+
+            if (activeDate.HasValue)
+            {
+                query = query.Where(a => a.StartDate <= activeDate.Value &&
+                    (!a.EndDate.HasValue || a.EndDate.Value >= activeDate.Value));
+            }
+
+            return await query.ToListAsync();
+        }
+
+        public async Task<List<Account>> GetSortedAccountsAsync(
+            string sortBy,
+            bool descending = false)
+        {
+            var query = _context.Accounts.Include(a => a.Residents).AsQueryable();
+
+            query = (sortBy?.ToLower(), descending) switch
+            {
+                ("accountnumber", false) => query.OrderBy(a => a.AccountNumber),
+                ("accountnumber", true) => query.OrderByDescending(a => a.AccountNumber),
+                ("startdate", false) => query.OrderBy(a => a.StartDate),
+                ("startdate", true) => query.OrderByDescending(a => a.StartDate),
+                ("address", false) => query.OrderBy(a => a.Address),
+                ("address", true) => query.OrderByDescending(a => a.Address),
+                ("area", false) => query.OrderBy(a => a.Area),
+                ("area", true) => query.OrderByDescending(a => a.Area),
+                (_, false) => query.OrderBy(a => a.Id),
+                (_, true) => query.OrderByDescending(a => a.Id)
+            };
+
+            return await query.ToListAsync();
+        }
     }
 }

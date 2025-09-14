@@ -112,5 +112,24 @@ namespace PersonalAccountData.Core.Services
                 throw new ArgumentException("The start date must be earlier than the end date");
             }
         }
+
+        public async Task<List<Account>> GetFilteredAccountsAsync(
+            string searchTerm,
+            bool? hasResidents,
+            DateTime? activeDate,
+            string accountNumber = null,
+            string address = null,
+            string residentName = null)
+        {
+            return await _repository.GetFilteredAccountsAsync(
+                searchTerm, hasResidents, activeDate, accountNumber, address, residentName);
+        }
+
+        public async Task<List<Account>> GetSortedAccountsAsync(
+            string sortBy,
+            bool descending = false)
+        {
+            return await _repository.GetSortedAccountsAsync(sortBy, descending);
+        }
     }
 }

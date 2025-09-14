@@ -45,5 +45,24 @@ namespace PersonalAccountData.API.Controllers
             await _accountService.CreateAccountAsync(account);
             return Ok();
         }
+
+        [HttpGet("filter")]
+        public async Task<ActionResult<List<AccountDTO>>> GetAccounts([FromQuery] AccountFilterDTO filter)
+        {
+            var accounts = await _accountService.GetFilteredAccountsAsync(
+                filter.Search,
+                filter.HasResidents,
+                filter.ActiveDate,
+                filter.AccountNumber,
+                filter.Address,
+                filter.ResidentName);
+
+            if (!string.IsNullOrEmpty(filter.SortBy))
+            {
+                accounts = await _accountService.GetSortedAccountsAsync(filter.SortBy, filter.SortDescending);
+            }
+
+            return Ok(_mapper.Map<List<AccountDTO>>(accounts));
+        }
     }
 }
