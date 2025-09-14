@@ -127,9 +127,10 @@ namespace PersonalAccountData.Core.Services
 
         public async Task<List<Account>> GetSortedAccountsAsync(
             string sortBy,
-            bool descending = false)
+            bool descending = false,
+            List<Account> accounts = null)
         {
-            return await _repository.GetSortedAccountsAsync(sortBy, descending);
+            return await _repository.GetSortedAccountsAsync(sortBy, descending, accounts);
         }
     }
 }

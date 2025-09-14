@@ -97,18 +97,31 @@ namespace PersonalAccountData.Infrastructure.Repositories
             string address = null,
             string residentName = null)
         {
-            var query = _context.Accounts
+            var accounts = _context.Accounts
                 .Include(a => a.Residents)
-                .AsQueryable();
+                .AsEnumerable();
 
             if (!string.IsNullOrEmpty(accountNumber) && accountNumber.Length == 10 &&
                 accountNumber.All(char.IsDigit))
             {
-                query = query.Where(a => a.AccountNumber.Contains(accountNumber));
+                accounts = accounts.Where(a => a.AccountNumber.ToLower().Contains(accountNumber));
             }
 
             if (!string.IsNullOrEmpty(address))
-                query = query.Where(a => a.Address.Contains(address));
+                accounts = accounts.Where(a => a.Address.ToLower().Contains(address.ToLower()));
+
+            if (hasResidents.HasValue)
+            {
+                accounts = hasResidents.Value ?
+                    accounts.Where(a => a.Residents.Any()) :
+                    accounts.Where(a => !a.Residents.Any());
+            }
+
+            if (activeDate.HasValue)
+            {
+                accounts = accounts.Where(a => a.StartDate <= activeDate.Value &&
+                    (!a.EndDate.HasValue || a.EndDate.Value >= activeDate.Value));
+            }
 
             if (!string.IsNullOrEmpty(residentName))
             {
@@ -116,12 +129,14 @@ namespace PersonalAccountData.Infrastructure.Repositories
                     .ToLower()
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+
                 foreach (var part in searchParts)
                 {
-                    query = query.Where(a => a.Residents.Any(r =>
-                    EF.Functions.Like(
-                        (r.LastName + " " + r.FirstName + " " + r.MiddleName).ToLower(),
-                        "%" + part + "%")));
+                    accounts = accounts.Where(a => a.Residents.Any(r =>
+                        r.LastName.ToLower().Contains(part) ||
+                        r.FirstName.ToLower().Contains(part) ||
+                        r.MiddleName.ToLower().Contains(part)
+                        ));
                 }
             }
 
@@ -133,53 +148,41 @@ namespace PersonalAccountData.Infrastructure.Repositories
                 foreach (var part in searchParts)
                 {
                     var searchTermLower = searchTerm.ToLower();
-                    query = query.Where(a =>
-                    a.AccountNumber.ToLower().Contains(searchTerm) ||
-                    a.Address.ToLower().Contains(searchTerm) ||
-                    a.Residents.Any(r =>
-                        EF.Functions.Like(
-                            (r.LastName + " " + r.FirstName + " " + r.MiddleName).ToLower(),
-                            "%" + part + "%")));
+                    accounts = accounts.Where(a =>
+                        a.AccountNumber.ToLower().Contains(searchTermLower) ||
+                        a.Address.ToLower().Contains(searchTermLower) ||
+                        a.Residents.Any(r =>
+                            r.LastName.ToLower().Contains(part) ||
+                            r.FirstName.ToLower().Contains(part) ||
+                            r.MiddleName.ToLower().Contains(part)));
                 }
             }
 
-            if (hasResidents.HasValue)
-            {
-                query = hasResidents.Value ?
-                    query.Where(a => a.Residents.Any()) :
-                    query.Where(a => !a.Residents.Any());
-            }
-
-            if (activeDate.HasValue)
-            {
-                query = query.Where(a => a.StartDate <= activeDate.Value &&
-                    (!a.EndDate.HasValue || a.EndDate.Value >= activeDate.Value));
-            }
-
-            return await query.ToListAsync();
+            return accounts.ToList();
         }
 
         public async Task<List<Account>> GetSortedAccountsAsync(
             string sortBy,
-            bool descending = false)
+            bool descending = false,
+            List<Account> accounts = null)
         {
-            var query = _context.Accounts.Include(a => a.Residents).AsQueryable();
+            var accountsQuer = accounts ?? await _context.Accounts.Include(a => a.Residents).ToListAsync();
 
-            query = (sortBy?.ToLower(), descending) switch
+            accountsQuer = (sortBy?.ToLower(), descending) switch
             {
-                ("accountnumber", false) => query.OrderBy(a => a.AccountNumber),
-                ("accountnumber", true) => query.OrderByDescending(a => a.AccountNumber),
-                ("startdate", false) => query.OrderBy(a => a.StartDate),
-                ("startdate", true) => query.OrderByDescending(a => a.StartDate),
-                ("address", false) => query.OrderBy(a => a.Address),
-                ("address", true) => query.OrderByDescending(a => a.Address),
-                ("area", false) => query.OrderBy(a => a.Area),
-                ("area", true) => query.OrderByDescending(a => a.Area),
-                (_, false) => query.OrderBy(a => a.Id),
-                (_, true) => query.OrderByDescending(a => a.Id)
+                ("accountnumber", false) => accountsQuer.OrderBy(a => a.AccountNumber).ToList(),
+                ("accountnumber", true) => accountsQuer.OrderByDescending(a => a.AccountNumber).ToList(),
+                ("startdate", false) => accountsQuer.OrderBy(a => a.StartDate).ToList(),
+                ("startdate", true) => accountsQuer.OrderByDescending(a => a.StartDate).ToList(),
+                ("address", false) => accountsQuer.OrderBy(a => a.Address).ToList(),
+                ("address", true) => accountsQuer.OrderByDescending(a => a.Address).ToList(),
+                ("area", false) => accountsQuer.OrderBy(a => a.Area).ToList(),
+                ("area", true) => accountsQuer.OrderByDescending(a => a.Area).ToList(),
+                (_, false) => accountsQuer.OrderBy(a => a.Id).ToList(),
+                (_, true) => accountsQuer.OrderByDescending(a => a.Id).ToList()
             };
 
-            return await query.ToListAsync();
+            return accounts;
         }
     }
 }

@@ -30,6 +30,7 @@ namespace PersonalAccountData.Core.Interfaces
 
         Task<List<Account>> GetSortedAccountsAsync(
             string sortBy,
-            bool descending = false);
+            bool descending = false,
+            List<Account> accounts = null);
     }
 }

@@ -59,7 +59,7 @@ namespace PersonalAccountData.API.Controllers
 
             if (!string.IsNullOrEmpty(filter.SortBy))
             {
-                accounts = await _accountService.GetSortedAccountsAsync(filter.SortBy, filter.SortDescending);
+                accounts = await _accountService.GetSortedAccountsAsync(filter.SortBy, filter.SortDescending, accounts);
             }
 
             return Ok(_mapper.Map<List<AccountDTO>>(accounts));
