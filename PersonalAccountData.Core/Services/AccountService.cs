@@ -29,6 +29,8 @@ namespace PersonalAccountData.Core.Services
 
         public async Task CreateAccountAsync(Account account)
         {
+            if (account.StartDate >= account.EndDate && account.EndDate.HasValue)
+                throw new ArgumentException("Start date must be before end date");
             await _repository.AddAsync(account);
             await _repository.SaveChangesAcync();
         }

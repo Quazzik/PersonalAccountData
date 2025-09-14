@@ -1,7 +1,7 @@
 ﻿using PersonalAccountData.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AccountService.Infrastructure.Data
+namespace PersonalAccountData.Infrastructure.Data
 {
     public class AppDbContext : DbContext
     {

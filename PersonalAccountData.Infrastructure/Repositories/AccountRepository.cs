@@ -1,11 +1,8 @@
-﻿using AccountService.Infrastructure.Data;
+﻿using PersonalAccountData.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using PersonalAccountData.Core.Entities;
 using PersonalAccountData.Core.Interfaces;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PersonalAccountData.Infrastructure.Repositories
