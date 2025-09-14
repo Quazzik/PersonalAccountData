@@ -15,6 +15,7 @@ namespace PersonalAccountData.Core.Interfaces
         void UpdateAccount (Account account);
         void DeleteAccount(Account account);
         Task<bool> SaveChangesAcync();
-        Task<bool> AccountNumberExistsAsync(string accountNumber);
+        Task<bool> AccountNumberExistsAsync(string accountNumber, int? excludeID);
+        Task<long> GetMaxAccountNumberValueAsync();
     }
 }

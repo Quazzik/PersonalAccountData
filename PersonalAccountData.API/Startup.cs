@@ -9,6 +9,7 @@ using PersonalAccountData.Core.Interfaces;
 using PersonalAccountData.Core.Services;
 using PersonalAccountData.Infrastructure.Data;
 using PersonalAccountData.Infrastructure.Repositories;
+using PersonalAccountData.Infrastructure.Services;
 
 namespace PersonalAccountData.API
 {
@@ -35,6 +36,7 @@ namespace PersonalAccountData.API
 
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
 
             services.AddAutoMapper(typeof(Startup));
         }
